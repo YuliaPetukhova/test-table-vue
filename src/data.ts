@@ -214,3 +214,35 @@ export const employees: Employee[] = [
     MobilePhone: "(310) 555-7276",
   },
 ];
+
+export type Task = {
+  ID: number;
+
+  Subject: string;
+
+  Status: number;
+
+  Owner: number;
+
+  AssignedEmployee: number;
+
+  OrderIndex: number;
+
+  Priority: number;
+};
+
+// export type Employee = {
+//   ID: number;
+//
+//   FullName: string;
+//
+//   Department: string;
+//
+//   Title: string;
+// };
+
+export type Status = {
+  id: number;
+
+  name: string;
+};
