@@ -33,35 +33,12 @@
       />
       <DxColumnChooser :enabled="true" />
       <DxColumnFixing :enabled="true" />
-      <DxColumn
-        :width="230"
-        :fixed="true"
-        :calculate-cell-value="calculateCellValue"
-        caption="Employee"
-        data-field="OrderID"
-        :allow-editing="false"
-      >
-      </DxColumn>
-      <DxColumn data-field="OrderDate" data-type="date">
-        <DxValidationRule type="required" />
-        <DxLookup
-          :data-source="employees"
-          value-expr="ID"
-          display-expr="FullName"
-        />
-      </DxColumn>
-
-      <DxColumn data-field="BirthDate" data-type="date"></DxColumn>
-      <DxColumn data-field="HireDate" data-type="date"></DxColumn>
-      <DxColumn data-field="Position" alignment="right"></DxColumn>
-      <DxColumn :width="230" data-field="Address"></DxColumn>
-      <DxColumn data-field="City"></DxColumn>
-      <DxColumn data-field="State"></DxColumn>
-      <DxColumn :visible="false" data-field="Zipcode"></DxColumn>
-      <DxColumn data-field="HomePhone"></DxColumn>
-      <DxColumn data-field="MobilePhone"></DxColumn>
-      <DxColumn data-field="Skype"></DxColumn>
-      <DxColumn data-field="Email"></DxColumn>
+      <DxColumn :width="80" data-field="Действие"></DxColumn>
+      <DxColumn :width="230" data-field="NameItem"></DxColumn>
+      <DxColumn data-field="Price"></DxColumn>
+      <DxColumn data-field="Quantity"></DxColumn>
+      <DxColumn data-field="ProductName"></DxColumn>
+      <DxColumn data-field="TotalAmount"></DxColumn>
       <DxColumn type="buttons">
         <DxButton
           icon="add"
@@ -74,14 +51,14 @@
       </DxColumn>
 
       <DxToolbar>
-        <DxItem name="addRowButton" show-text="always" />
+        <DxItem name="addRowButton" show-text="always"></DxItem>
       </DxToolbar>
     </DxDataGrid>
     <div class="options">
-      <div class="caption">Options</div>
+      <div class="caption">Опции</div>
       <div class="option-container">
         <div class="option">
-          <span>New Row Position</span>
+          <span>Место добавления новой строки</span>
           <DxSelectBox
             id="newRowPositionSelectBox"
             :input-attr="{ 'aria-label': 'Position' }"
@@ -112,13 +89,11 @@ import {
   DxColumnChooser,
   DxColumnFixing,
   DxEditing,
-  DxValidationRule,
   DxButton,
   DxToolbar,
   DxItem,
   DxScrolling,
   DxDataGridTypes,
-  DxLookup,
   DxRowDragging,
   DxSorting,
 } from "devextreme-vue/data-grid";
@@ -163,9 +138,9 @@ const isAddButtonVisible = (e: { row: DxDataGridTypes.Row }) =>
 const onRowInserted = (e: DxDataGridTypes.RowInsertedEvent) => {
   e.component.navigateToRow(e.key);
 };
-function calculateCellValue(data: Employee) {
-  return [data.Title, data.FirstName, data.LastName].join(" ");
-}
+// function calculateCellValue(data: Employee) {
+//   return [data.Title].join(" ");
+// }
 
 const showDragIcons = ref(true);
 
@@ -187,6 +162,7 @@ const onReorder = (e: DxDataGridTypes.RowDraggingReorderEvent) => {
   employees.value = newTasks;
 };
 </script>
+
 <style scoped>
 #gridContainer {
   height: 440px;
