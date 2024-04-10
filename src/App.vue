@@ -8,9 +8,9 @@
       :allow-column-resizing="true"
       :column-auto-width="true"
       :show-borders="true"
-      :remote-operations="true"
       :on-row-inserted="onRowInserted"
       :height="440"
+      :repaint-changes-only="true"
     >
       <DxRowDragging
         :allow-reordering="true"
@@ -18,66 +18,94 @@
         :show-drag-icons="showDragIcons"
       />
       <DxSorting mode="none" />
-      <DxScrolling mode="virtual" />
-      <DxScrolling :mode="scrollingMode" />
       <DxEditing
         mode="row"
         :allow-adding="true"
-        :allow-deleting="true"
         :allow-updating="true"
+        :allow-deleting="true"
         :confirm-delete="false"
         :use-icons="true"
         :new-row-position="newRowPosition"
         :changes="changes"
         :edit-row-key="editRowKey"
       />
-      <DxColumnChooser :enabled="true" />
       <DxColumnFixing :enabled="true" />
-      <DxColumn :width="80" data-field="Действие"></DxColumn>
-      <DxColumn :width="230" data-field="NameItem"></DxColumn>
-      <DxColumn data-field="Price"></DxColumn>
-      <DxColumn data-field="Quantity"></DxColumn>
-      <DxColumn data-field="ProductName"></DxColumn>
-      <DxColumn data-field="TotalAmount"></DxColumn>
-      <DxColumn type="buttons">
-        <DxButton
-          icon="add"
-          @click="onAddButtonClick"
-          :visible="isAddButtonVisible"
+      <DxColumn
+        :width="90"
+        data-field="OrderNumber"
+        caption=""
+        :allow-hiding="false"
+        :allow-editing="false"
+      />
+      <DxColumn
+        :width="80"
+        data-field="Действие"
+        :allow-editing="false"
+        :allow-hiding="false"
+      ></DxColumn>
+      <DxColumn
+        :width="230"
+        data-field="NameItem"
+        caption="Наименование единицы"
+        :allow-hiding="true"
+      >
+        <DxLookup
+          :data-source="nameItems"
+          display-expr="Name"
+          value-expr="ID"
         />
-        <DxButton name="delete" />
-        <DxButton name="save" />
-        <DxButton name="cancel" />
       </DxColumn>
+      <DxColumn
+        data-field="Price"
+        :allow-hiding="true"
+        caption="Цена"
+      ></DxColumn>
+      <DxColumn
+        data-field="Quantity"
+        :allow-hiding="true"
+        caption="Кол-во"
+      ></DxColumn>
+      <DxColumn
+        data-field="ProductName"
+        :allow-hiding="true"
+        caption="Название товара"
+      >
+        <DxLookup
+          :data-source="productNames"
+          display-expr="Name"
+          value-expr="ID"
+        />
+      </DxColumn>
+      <DxColumn
+        data-field="TotalAmount"
+        :allow-hiding="true"
+        caption="Итого"
+        format="currency"
+      ></DxColumn>
 
-      <DxToolbar>
-        <DxItem name="addRowButton" show-text="always"></DxItem>
-      </DxToolbar>
+      <DxColumnChooser :enabled="true" :mode="mode">
+        <DxPosition
+          my="right top"
+          at="right bottom"
+          of=".dx-datagrid-column-chooser-button"
+        />
+
+        <DxColumnChooserSearch
+          :enabled="searchEnabled"
+          :editor-options="editorOptions"
+        />
+        <DxColumnChooserSelection :allow-select-all="allowSelectAll" />
+      </DxColumnChooser>
+
+      <DxSummary :recalculate-while-editing="true">
+        <DxTotalItem
+          column="TotalAmount"
+          summary-type="sum"
+          value-format="currency"
+        />
+        <DxTotalItem column="OrderNumber" summary-type="count" />
+      </DxSummary>
     </DxDataGrid>
-    <div class="options">
-      <div class="caption">Опции</div>
-      <div class="option-container">
-        <div class="option">
-          <span>Место добавления новой строки</span>
-          <DxSelectBox
-            id="newRowPositionSelectBox"
-            :input-attr="{ 'aria-label': 'Position' }"
-            v-model:value="newRowPosition"
-            :items="newRowPositionOptions"
-          />
-          <DxCheckBox v-model:value="showDragIcons" text="Show Drag Icons" />
-        </div>
-        <div class="option">
-          <span>Scrolling Mode</span>
-          <DxSelectBox
-            id="scrollingModeSelectBox"
-            v-model:value="scrollingMode"
-            :input-attr="{ 'aria-label': 'Scrolling Mode' }"
-            :items="scrollingModeOptions"
-          />
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -89,58 +117,32 @@ import {
   DxColumnChooser,
   DxColumnFixing,
   DxEditing,
-  DxButton,
-  DxToolbar,
-  DxItem,
-  DxScrolling,
   DxDataGridTypes,
   DxRowDragging,
   DxSorting,
+  DxLookup,
+  DxColumnChooserSearch,
+  DxColumnChooserSelection,
+  DxPosition,
+  DxSummary,
+  DxTotalItem,
 } from "devextreme-vue/data-grid";
-import DxSelectBox from "devextreme-vue/select-box";
-import Guid from "devextreme/core/guid";
+import { DxTextBoxTypes } from "devextreme-vue/text-box";
 
-import DxCheckBox from "devextreme-vue/check-box";
-import { employees as defaultEmployees, Employee } from "./data";
+import {
+  employees as defaultEmployees,
+  Employee,
+  nameItems,
+  productNames,
+} from "./data";
 
-const newRowPositionOptions = [
-  "first",
-  "last",
-  "pageTop",
-  "pageBottom",
-  "viewportTop",
-  "viewportBottom",
-];
-const scrollingModeOptions = ["standard", "virtual"];
-
-const newRowPosition = ref("viewportTop");
-const scrollingMode = ref("standard");
+const newRowPosition = ref("pageBottom");
 const changes = ref<DxDataGridTypes.DataChange[]>([]);
 const editRowKey = ref<string | null>(null);
-
-const onAddButtonClick = (e: DxDataGridTypes.ColumnButtonClickEvent) => {
-  const key = new Guid().toString();
-
-  changes.value = [
-    {
-      key,
-      type: "insert",
-      data: {},
-      insertAfterKey: e.row?.key,
-    },
-  ];
-  editRowKey.value = key;
-};
-
-const isAddButtonVisible = (e: { row: DxDataGridTypes.Row }) =>
-  !e.row.isEditing;
 
 const onRowInserted = (e: DxDataGridTypes.RowInsertedEvent) => {
   e.component.navigateToRow(e.key);
 };
-// function calculateCellValue(data: Employee) {
-//   return [data.Title].join(" ");
-// }
 
 const showDragIcons = ref(true);
 
@@ -159,7 +161,18 @@ const onReorder = (e: DxDataGridTypes.RowDraggingReorderEvent) => {
   newTasks.splice(fromIndex, 1);
   newTasks.splice(toIndex, 0, e.itemData);
 
+  newTasks.forEach((value, index) => {
+    value.OrderNumber = ++index;
+  });
+
   employees.value = newTasks;
+};
+
+const mode = ref("select");
+const searchEnabled = ref(true);
+const allowSelectAll = ref(true);
+const editorOptions: DxTextBoxTypes.Properties = {
+  placeholder: "Поиск колонки",
 };
 </script>
 
@@ -167,48 +180,9 @@ const onReorder = (e: DxDataGridTypes.RowDraggingReorderEvent) => {
 #gridContainer {
   height: 440px;
 }
-.options {
-  margin-top: 20px;
-  padding: 20px;
-  background-color: rgba(191, 191, 191, 0.15);
-  position: relative;
-}
-
-.caption {
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.option-container {
-  display: flex;
-  margin: 0 auto;
-  justify-content: space-between;
-}
-
-.option {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-}
-.option-caption {
-  white-space: nowrap;
-  margin: 0 8px;
-}
 
 .option > span {
   position: relative;
   margin-right: 10px;
-}
-
-#newRowPositionSelectBox {
-  width: 150px;
-}
-
-#scrollingModeSelectBox {
-  width: 150px;
-}
-.caption {
-  font-size: 18px;
-  font-weight: 500;
 }
 </style>
